@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公認證費用標準計算機</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 800px; width: 100%; }
+        h2 { color: #2c3e50; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .input-group { margin: 20px 0; display: flex; gap: 10px; align-items: center; }
+        input[type="number"] { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+        button { padding: 12px 20px; background-color: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; transition: 0.3s; }
+        button:hover { background-color: #2980b9; }
+        .non-calc-btn { background-color: #95a5a6; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; display: none; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: right; }
+        th { background-color: #f8f9fa; text-align: center; color: #34495e; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .highlight { color: #e74c3c; font-weight: bold; }
+        .tier-info { margin-top: 10px; font-size: 14px; color: #7f8c8d; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>⚖️ 公認證費用標準計算機</h2>
+    
+    <div class="input-group">
+        <label>標的金額 (NTD):</label>
+        <input type="number" id="amount" placeholder="請輸入金額，例如：500000" min="0">
+        <button onclick="calculateFee()">計算費用</button>
+        <button class="non-calc-btn" onclick="setNonCalc()">不能算定</button>
+    </div>
+
+    <div id="tierDisplay" class="tier-info"></div>
+
+    <table id="resultTable">
+        <thead>
+            <tr>
+                <th colspan="3">公證 (Notarization)</th>
+                <th colspan="2">認證 (Authentication)</th>
+            </tr>
+            <tr>
+                <th style="width:20%">作成中文公證書 (109)</th>
+                <th style="width:20%">載明逕受強制執行 (119)</th>
+                <th style="width:20%">外文/對照公證書 (125)</th>
+                <th style="width:20%">認證中文文書 (120)</th>
+                <th style="width:20%">認證外文/翻譯 (125)</th>
+            </tr>
+        </thead>
+        <tbody id="feeBody">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    // 級距數據 (金額單位：元)
+    const tiers = [
+        { max: 200000, fees: [1000, 1500, 1500, 500, 750] },
+        { max: 500000, fees: [2000, 3000, 3000, 1000, 1500] },
+        { max: 1000000, fees: [3000, 4500, 4500, 1500, 2250] },
+        { max: 2000000, fees: [4000, 6000, 6000, 2000, 3000] },
+        { max: 5000000, fees: [5000, 7500, 7500, 2500, 3750] },
+        { max: 10000000, fees: [6000, 9000, 9000, 3000, 4500] },
+        { max: 20000000, fees: [8000, 12000, 12000, 4000, 6000] },
+        { max: 30000000, fees: [10000, 15000, 15000, 5000, 7500] },
+        { max: 40000000, fees: [12000, 18000, 18000, 6000, 9000] },
+        { max: 50000000, fees: [14000, 21000, 21000, 7000, 10500] },
+        { max: 60000000, fees: [15000, 22500, 22500, 7500, 11250] },
+        { max: 70000000, fees: [16000, 24000, 24000, 8000, 12000] },
+        { max: 80000000, fees: [17000, 25500, 25500, 8500, 12750] },
+        { max: 90000000, fees: [18000, 27000, 27000, 9000, 13500] },
+        { max: 100000000, fees: [19000, 28500, 28500, 9500, 14250] }
+    ];
+
+    function calculateFee() {
+        let amount = parseFloat(document.getElementById('amount').value);
+        if (isNaN(amount) || amount < 0) {
+            alert("請輸入正確的金額");
+            return;
+        }
+
+        let selectedFees = [];
+        let tierLabel = "";
+
+        if (amount <= 100000000) {
+            // 處理 1 億元以下的邏輯
+            for (let tier of tiers) {
+                if (amount <= tier.max) {
+                    selectedFees = tier.fees;
+                    tierLabel = `標的金額：${amount.toLocaleString()} 元 (適用級距：${tier.max/10000}萬元以下)`;
+                    break;
+                }
+            }
+        } else {
+            // 處理 1 億元以上的遞增邏輯 (依照圖表遞推)
+            // 1億-1.1億: 20000, 30000, 30000, 10000, 15000
+            // 每 1000 萬增加一次
+            let extraChunks = Math.floor((amount - 100000001) / 10000000) + 1;
+            let baseFee = 19000 + (extraChunks * 1000);
+            
+            // 根據圖表公式：
+            // 強制執行(119) = base * 1.5
+            // 外文公證(125) = base + 10000 (在高額段的趨勢)
+            // 認證中文(120) = base / 2
+            // 認證外文(125) = (base / 2) * 1.5
+            selectedFees = [
+                baseFee, 
+                baseFee * 1.5, 
+                baseFee + 10000, 
+                baseFee / 2, 
+                (baseFee / 2) * 1.5
+            ];
+            tierLabel = `標的金額：${amount.toLocaleString()} 元 (超過 1 億元遞增計算)`;
+        }
+
+        displayResult(selectedFees, tierLabel);
+    }
+
+    function setNonCalc() {
+        const nonCalcFees = [1000, 1500, 1500, 500, 750];
+        displayResult(nonCalcFees, "標的金額：不能算定");
+    }
+
+    function displayResult(fees, label) {
+        const table = document.getElementById('resultTable');
+        const body = document.getElementById('feeBody');
+        const info = document.getElementById('tierDisplay');
+
+        info.innerText = label;
+        body.innerHTML = `
+            <tr>
+                <td>${fees[0].toLocaleString()}</td>
+                <td class="highlight">${fees[1].toLocaleString()}</td>
+                <td>${fees[2].toLocaleString()}</td>
+                <td>${fees[3].toLocaleString()}</td>
+                <td>${fees[4].toLocaleString()}</td>
+            </tr>
+        `;
+        table.style.display = "table";
+    }
+</script>
+
+</body>
+</html>
