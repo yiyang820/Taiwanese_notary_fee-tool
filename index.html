@@ -2,61 +2,178 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>公認證費用標準計算機</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>公認證費用計算機</title>
     <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 800px; width: 100%; }
-        h2 { color: #2c3e50; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-        .input-group { margin: 20px 0; display: flex; gap: 10px; align-items: center; }
-        input[type="number"] { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
-        button { padding: 12px 20px; background-color: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; transition: 0.3s; }
-        button:hover { background-color: #2980b9; }
-        .non-calc-btn { background-color: #95a5a6; }
+        :root {
+            --primary-color: #2563eb;
+            --notary-bg: #eff6ff;
+            --notary-border: #bfdbfe;
+            --auth-bg: #f0fdf4;
+            --auth-border: #bbf7d0;
+            --accent-color: #dc2626;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8fafc; 
+            margin: 0;
+            padding: 15px;
+            color: #1e293b;
+        }
+
+        .container { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+            max-width: 600px; 
+            margin: 0 auto; 
+        }
+
+        h2 { 
+            text-align: center; 
+            color: #1e40af; 
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+
+        .input-section {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .input-group { margin-bottom: 12px; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; display: none; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: right; }
-        th { background-color: #f8f9fa; text-align: center; color: #34495e; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .highlight { color: #e74c3c; font-weight: bold; }
-        .tier-info { margin-top: 10px; font-size: 14px; color: #7f8c8d; text-align: center; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #475569; }
+
+        input[type="number"] { 
+            width: 100%; 
+            padding: 14px; 
+            border: 2px solid #cbd5e1; 
+            border-radius: 8px; 
+            font-size: 18px; 
+            box-sizing: border-box;
+            -moz-appearance: textfield;
+        }
+
+        .btn-group { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-top: 10px; }
+
+        button { 
+            padding: 14px; 
+            background-color: var(--primary-color); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            font-weight: bold;
+            cursor: pointer; 
+        }
+
+        .btn-secondary { background-color: #64748b; }
+
+        #tierDisplay { 
+            text-align: center; 
+            padding: 10px; 
+            background: #fef3c7; 
+            color: #92400e; 
+            border-radius: 8px; 
+            margin-bottom: 15px;
+            display: none;
+            font-weight: 500;
+        }
+
+        /* 結果區塊樣式 */
+        .result-container { display: none; }
+
+        .fee-card {
+            border-radius: 12px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+
+        .card-header { padding: 10px 15px; font-weight: bold; text-align: center; }
+
+        .notary-header { background-color: var(--notary-bg); color: #1e40af; border-bottom: 1px solid var(--notary-border); }
+        .auth-header { background-color: var(--auth-bg); color: #166534; border-bottom: 1px solid var(--auth-border); }
+
+        .fee-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f1f5f9;
+            background: white;
+        }
+
+        .fee-item:last-child { border-bottom: none; }
+
+        .fee-label { font-size: 14px; color: #64748b; flex: 1; }
+        .fee-value { font-size: 18px; font-weight: 800; color: #1e293b; }
+        .highlight { color: var(--accent-color); }
+
+        /* 桌機版表格回歸 */
+        @media (min-width: 600px) {
+            .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>⚖️ 公認證費用標準計算機</h2>
+    <h2>⚖️ 公認證費用計算機</h2>
     
-    <div class="input-group">
-        <label>標的金額 (NTD):</label>
-        <input type="number" id="amount" placeholder="請輸入金額，例如：500000" min="0">
-        <button onclick="calculateFee()">計算費用</button>
-        <button class="non-calc-btn" onclick="setNonCalc()">不能算定</button>
+    <div class="input-section">
+        <div class="input-group">
+            <label>請輸入標的金額 (元):</label>
+            <input type="number" id="amount" placeholder="例如：500000" inputmode="numeric">
+        </div>
+        <div class="btn-group">
+            <button onclick="calculateFee()">開始計算</button>
+            <button class="btn-secondary" onclick="setNonCalc()">不能算定</button>
+        </div>
     </div>
 
-    <div id="tierDisplay" class="tier-info"></div>
+    <div id="tierDisplay"></div>
 
-    <table id="resultTable">
-        <thead>
-            <tr>
-                <th colspan="3">公證 (Notarization)</th>
-                <th colspan="2">認證 (Authentication)</th>
-            </tr>
-            <tr>
-                <th style="width:20%">作成中文公證書 (109)</th>
-                <th style="width:20%">載明逕受強制執行 (119)</th>
-                <th style="width:20%">外文/對照公證書 (125)</th>
-                <th style="width:20%">認證中文文書 (120)</th>
-                <th style="width:20%">認證外文/翻譯 (125)</th>
-            </tr>
-        </thead>
-        <tbody id="feeBody">
-            </tbody>
-    </table>
+    <div id="resultContainer" class="result-container">
+        <div class="result-grid">
+            <div class="fee-card">
+                <div class="card-header notary-header">公證 (Notarization)</div>
+                <div class="fee-item">
+                    <div class="fee-label">中文公證書 (109)</div>
+                    <div class="fee-value" id="fee0">-</div>
+                </div>
+                <div class="fee-item">
+                    <div class="fee-label">逕受強制執行 (119)</div>
+                    <div class="fee-value highlight" id="fee1">-</div>
+                </div>
+                <div class="fee-item">
+                    <div class="fee-label">外文/對照公證 (125)</div>
+                    <div class="fee-value" id="fee2">-</div>
+                </div>
+            </div>
+
+            <div class="fee-card">
+                <div class="card-header auth-header">認證 (Authentication)</div>
+                <div class="fee-item">
+                    <div class="fee-label">認證中文文書 (120)</div>
+                    <div class="fee-value" id="fee3">-</div>
+                </div>
+                <div class="fee-item">
+                    <div class="fee-label">認證外文/翻譯 (125)</div>
+                    <div class="fee-value" id="fee4">-</div>
+                </div>
+            </div>
+        </div>
+        <p style="font-size: 12px; color: #94a3b8; text-align: center;">註：本結果僅供參考，實際費用依公證處收費為準。</p>
+    </div>
 </div>
 
 <script>
-    // 級距數據 (金額單位：元)
     const tiers = [
         { max: 200000, fees: [1000, 1500, 1500, 500, 750] },
         { max: 500000, fees: [2000, 3000, 3000, 1000, 1500] },
@@ -78,68 +195,47 @@
     function calculateFee() {
         let amount = parseFloat(document.getElementById('amount').value);
         if (isNaN(amount) || amount < 0) {
-            alert("請輸入正確的金額");
+            alert("請輸入有效的金額");
             return;
         }
 
         let selectedFees = [];
-        let tierLabel = "";
+        let label = "";
 
         if (amount <= 100000000) {
-            // 處理 1 億元以下的邏輯
             for (let tier of tiers) {
                 if (amount <= tier.max) {
                     selectedFees = tier.fees;
-                    tierLabel = `標的金額：${amount.toLocaleString()} 元 (適用級距：${tier.max/10000}萬元以下)`;
+                    label = `當前級距：${tier.max/10000}萬元以下`;
                     break;
                 }
             }
         } else {
-            // 處理 1 億元以上的遞增邏輯 (依照圖表遞推)
-            // 1億-1.1億: 20000, 30000, 30000, 10000, 15000
-            // 每 1000 萬增加一次
+            // 超過一億元
             let extraChunks = Math.floor((amount - 100000001) / 10000000) + 1;
             let baseFee = 19000 + (extraChunks * 1000);
-            
-            // 根據圖表公式：
-            // 強制執行(119) = base * 1.5
-            // 外文公證(125) = base + 10000 (在高額段的趨勢)
-            // 認證中文(120) = base / 2
-            // 認證外文(125) = (base / 2) * 1.5
-            selectedFees = [
-                baseFee, 
-                baseFee * 1.5, 
-                baseFee + 10000, 
-                baseFee / 2, 
-                (baseFee / 2) * 1.5
-            ];
-            tierLabel = `標的金額：${amount.toLocaleString()} 元 (超過 1 億元遞增計算)`;
+            selectedFees = [baseFee, baseFee * 1.5, baseFee + 10000, baseFee / 2, (baseFee / 2) * 1.5];
+            label = "適用：超過 1 億元遞增計算";
         }
 
-        displayResult(selectedFees, tierLabel);
+        displayResult(selectedFees, label);
     }
 
     function setNonCalc() {
-        const nonCalcFees = [1000, 1500, 1500, 500, 750];
-        displayResult(nonCalcFees, "標的金額：不能算定");
+        displayResult([1000, 1500, 1500, 500, 750], "性質：不能算定標的金額");
     }
 
     function displayResult(fees, label) {
-        const table = document.getElementById('resultTable');
-        const body = document.getElementById('feeBody');
-        const info = document.getElementById('tierDisplay');
+        document.getElementById('tierDisplay').innerText = label;
+        document.getElementById('tierDisplay').style.display = "block";
+        document.getElementById('resultContainer').style.display = "block";
+        
+        fees.forEach((fee, index) => {
+            document.getElementById(`fee${index}`).innerText = `$${Math.round(fee).toLocaleString()}`;
+        });
 
-        info.innerText = label;
-        body.innerHTML = `
-            <tr>
-                <td>${fees[0].toLocaleString()}</td>
-                <td class="highlight">${fees[1].toLocaleString()}</td>
-                <td>${fees[2].toLocaleString()}</td>
-                <td>${fees[3].toLocaleString()}</td>
-                <td>${fees[4].toLocaleString()}</td>
-            </tr>
-        `;
-        table.style.display = "table";
+        // 自動捲動到結果區 (手機好用)
+        window.scrollTo({ top: document.getElementById('tierDisplay').offsetTop - 20, behavior: 'smooth' });
     }
 </script>
 
